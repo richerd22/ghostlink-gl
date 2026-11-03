@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GHOST LINK</title>
+<link rel="icon" href="../icon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="stylesheet" href="../site.css">
+</head>
+<body>
+<main>
+<header>
+<pre class="ghost asleep" id="ghost" aria-hidden="true">  .--.
+ / __ \
+|      |
+|      |
+ \/\/\/</pre>
+<h1>GHOST LINK</h1>
+</header>
+
+<p class="big" id="msg">Looking for the live link...</p>
+<p class="small" id="sub"></p>
+<p><a class="button" id="go" href="#" hidden>WATCH LIVE</a></p>
+
+<footer>made with &lt;3 in Boston, MA by Third Polar Arch</footer>
+</main>
+<script>
+  // The box at the venue writes its current watch-from-home link to watch.json in this site's repo when it's
+  // switched on, and clears it when it's off. Read it fresh from GitHub (the Pages copy can lag a minute).
+  const msg = document.getElementById('msg'), sub = document.getElementById('sub'), go = document.getElementById('go');
+  const LIVE = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com\/?$/;
+  function off() {
+    msg.textContent = "Not live right now.";
+    sub.textContent = "The box at the venue turns this on from STATUS → WATCH FROM HOME. Check back once the night starts.";
+  }
+  fetch('https://api.github.com/repos/richerd22/ghostlink-gl/contents/watch.json', { headers: { Accept: 'application/vnd.github.raw' }, cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(w => {
+      if (!w.url || !LIVE.test(w.url) || Date.now() - (w.since || 0) > 24 * 3600 * 1000) return off();
+      document.getElementById('ghost').textContent = '  .--.\n / oo \\\n|      |\n|      |\n \\/\\/\\/';
+      document.getElementById('ghost').className = 'ghost';
+      msg.textContent = 'Live now. Opening...';
+      sub.textContent = 'View only. If nothing happens, tap WATCH LIVE.';
+      go.href = w.url;
+      go.hidden = false;
+      setTimeout(() => location.replace(w.url), 600);
+    })
+    .catch(off);
+</script>
+</body>
+</html>
