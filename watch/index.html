@@ -22,6 +22,7 @@
 <p class="big" id="msg">Looking for the live link...</p>
 <p class="small" id="sub"></p>
 <p><a class="button" id="go" href="#" hidden>WATCH LIVE</a></p>
+<div id="list" class="watch-list"></div>
 
 <footer>made with &lt;3 in Boston, MA by Third Polar Arch</footer>
 </main>
@@ -37,14 +38,25 @@
   fetch('https://api.github.com/repos/richerd22/ghostlink-gl/contents/watch.json', { headers: { Accept: 'application/vnd.github.raw' }, cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(w => {
-      if (!w.url || !LIVE.test(w.url) || Date.now() - (w.since || 0) > 24 * 3600 * 1000) return off();
+      // One entry per GHOST LINK box (room). ?room=51 picks one when several are live.
+      const want = new URLSearchParams(location.search).get('room');
+      const live = Object.values(w.boxes || {}).filter(b => b.url && LIVE.test(b.url) && Date.now() - (b.since || 0) < 24 * 3600 * 1000)
+        .filter(b => !want || (b.room || '').toLowerCase() === want.toLowerCase());
+      if (!live.length) return off();
       document.getElementById('ghost').textContent = '  .--.\n / oo \\\n|      |\n|      |\n \\/\\/\\/';
       document.getElementById('ghost').className = 'ghost';
-      msg.textContent = 'Live now. Opening...';
+      if (live.length > 1) {
+        msg.textContent = live.length + ' rooms live now.';
+        sub.textContent = 'View only. Pick a room.';
+        const list = document.getElementById('list');
+        live.forEach(b => { const a = document.createElement('a'); a.className = 'button'; a.href = b.url; a.textContent = 'WATCH ' + (b.room || 'LIVE').toUpperCase(); list.appendChild(a); });
+        return;
+      }
+      msg.textContent = (live[0].room ? live[0].room.toUpperCase() + ' is live' : 'Live now') + '. Opening...';
       sub.textContent = 'View only. If nothing happens, tap WATCH LIVE.';
-      go.href = w.url;
+      go.href = live[0].url;
       go.hidden = false;
-      setTimeout(() => location.replace(w.url), 600);
+      setTimeout(() => location.replace(live[0].url), 600);
     })
     .catch(off);
 </script>
