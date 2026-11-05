@@ -41,7 +41,7 @@
   try {
     const ctl = new AbortController(); setTimeout(() => ctl.abort(), 6000);
     const [here, ip] = await Promise.all([
-      fetch('https://api.github.com/repos/richerd22/ghostlink-gl/contents/here.json', { headers: { Accept: 'application/vnd.github.raw' }, cache: 'no-store', signal: ctl.signal }).then(r => r.ok ? r.json() : null),
+      fetch('https://raw.githubusercontent.com/richerd22/ghostlink-gl/main/here.json?t=' + Math.floor(Date.now() / 60000), { cache: 'no-store', signal: ctl.signal }).then(r => r.ok ? r.json() : null),
       fetch('https://api.ipify.org?format=json', { cache: 'no-store', signal: ctl.signal }).then(r => r.json()).then(j => j.ip),
     ]);
     const boxes = Object.values((here && here.boxes) || {}).filter(b => b.lan && b.net && Date.now() - (b.seen || 0) < 8 * 3600 * 1000);
