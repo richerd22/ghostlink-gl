@@ -19,13 +19,46 @@
 <h1>GHOST LINK</h1>
 </header>
 
-<!-- On the GHOST LINK Wi-Fi every name, this one included, already lands on the box.
-     Anyone who sees this page is on some other network. -->
-<p class="big">Join the Wi-Fi <b>GHOST LINK</b>, then open this page again.</p>
-<p>The password is on the sticker in the booth.</p>
-
-<p><a class="button" href="http://10.42.0.1/">OPEN THE DASHBOARD</a></p>
-<p class="small">On the venue's own Wi-Fi instead? Try <a href="http://ghostlink.local/">ghostlink.local</a>.</p>
+<!-- On the GHOST LINK Wi-Fi every name, this one included, already lands on the box, so anyone who sees this
+     page is on some other network. If a box is on this same Wi-Fi it says so (here.json: its local address next to
+     a slow hash of the Wi-Fi's public address; we hash ours the same way and only show matches). -->
+<div id="found" hidden>
+  <p class="big" id="foundText">GHOST LINK is on this Wi-Fi.</p>
+  <div id="foundList"></div>
+  <p class="small">Bookmark it, or come back to <b>gl.cold.fyi</b> any time; this button follows the box.</p>
+</div>
+<div id="looking"><p class="small">Looking for a GHOST LINK on this Wi-Fi…</p></div>
+<div id="notFound">
+  <p class="big">Join the Wi-Fi <b>GHOST LINK</b>, then open this page again.</p>
+  <p>The password is on the sticker in the booth.</p>
+  <p><a class="button" href="http://10.42.0.1/">OPEN THE DASHBOARD</a></p>
+  <p class="small">On the venue's own Wi-Fi instead? Try <a href="http://ghostlink.local/">ghostlink.local</a>.</p>
+</div>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id);
+  const done = () => { $('looking').hidden = true; };
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 6000);
+    const [here, ip] = await Promise.all([
+      fetch('https://api.github.com/repos/richerd22/ghostlink-gl/contents/here.json', { headers: { Accept: 'application/vnd.github.raw' }, cache: 'no-store', signal: ctl.signal }).then(r => r.ok ? r.json() : null),
+      fetch('https://api.ipify.org?format=json', { cache: 'no-store', signal: ctl.signal }).then(r => r.json()).then(j => j.ip),
+    ]);
+    const boxes = Object.values((here && here.boxes) || {}).filter(b => b.lan && b.net && Date.now() - (b.seen || 0) < 8 * 3600 * 1000);
+    if (!ip || !boxes.length || !crypto.subtle) return done();
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(ip), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new TextEncoder().encode('ghostlink-here-v1'), iterations: 100000 }, key, 128);
+    const net = [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('');
+    const mine = boxes.filter(b => b.net === net && /^[0-9.]{7,15}$/.test(b.lan));
+    if (!mine.length) return done();
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    $('foundList').innerHTML = mine.map(b => `<p><a class="button" href="http://${b.lan}/">OPEN${mine.length > 1 ? ' ' + esc(b.room).toUpperCase() : ' THE DASHBOARD'}</a></p>`).join('');
+    $('foundText').textContent = mine.length > 1 ? 'GHOST LINK is on this Wi-Fi (' + mine.length + ' rooms).' : 'GHOST LINK is on this Wi-Fi.';
+    $('found').hidden = false; $('notFound').hidden = true;
+  } catch (e) { /* offline or blocked: the normal instructions stay */ }
+  done();
+})();
+</script>
 
 <footer>made with &lt;3 in Boston, MA by Third Polar Arch</footer>
 </main>
