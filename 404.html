@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GHOST LINK</title>
+<link rel="icon" href="/icon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<main>
+<header>
+<pre class="ghost asleep" id="ghost" aria-hidden="true">  .--.
+ / __ \
+|      |
+|      |
+ \/\/\/</pre>
+<h1 id="unit">GHOST LINK</h1>
+</header>
+<!-- SHORT LINKS: gl.cold.fyi/<unit>[/<role>]. GitHub Pages serves this page for every path it doesn't have, so
+     each unit's link needs no file of its own. The unit name is set on the box (share panel -> CHANGE NAME), which
+     files its address in here.json and its WATCH FROM HOME link in watch.json under that name.
+     Same Wi-Fi as the box (the hashed public address matches): straight to the box. Not here but live: watch from
+     home. Otherwise: how to reach it. -->
+<p class="big" id="msg">Looking for it…</p>
+<p class="small" id="sub"></p>
+<p><a class="button" id="go" hidden>OPEN</a></p>
+<div id="how" hidden>
+  <p>At the venue: join the Wi-Fi <b>GHOST LINK</b> (password on the sticker), then open this link again.</p>
+  <p><a class="button" href="http://10.42.0.1/">OPEN THE DASHBOARD</a></p>
+</div>
+<footer>made with &lt;3 in Boston, MA by Third Polar Arch</footer>
+</main>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id);
+  const parts = location.pathname.split('/').filter(Boolean).map(s => decodeURIComponent(s).toLowerCase());
+  const name = parts[0] || '', role = parts[1] || '';
+  const ROLES = ['dj', 'photo', 'vj', 'lights', 'tech', 'manager'];
+  if (!/^[a-z0-9][a-z0-9-]{1,23}$/.test(name)) { $('msg').textContent = 'No GHOST LINK here.'; $('how').hidden = false; return; }
+  $('unit').textContent = name.toUpperCase();
+  const q = ROLES.includes(role) ? '?role=' + role : '';
+  const LIVE = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com\/?$/;
+  const go = (url, label, now) => {
+    $('go').href = url; $('go').textContent = label; $('go').hidden = false;
+    $('ghost').textContent = '  .--.\n / oo \\\n|      |\n|      |\n \\/\\/\\/'; $('ghost').className = 'ghost';
+    if (now) setTimeout(() => location.replace(url), 500);
+  };
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 7000);
+    const raw = f => fetch('https://raw.githubusercontent.com/richerd22/ghostlink-gl/main/' + f + '?t=' + Math.floor(Date.now() / 60000), { cache: 'no-store', signal: ctl.signal }).then(r => r.ok ? r.json() : null).catch(() => null);
+    const [here, watch, ip] = await Promise.all([raw('here.json'), raw('watch.json'),
+      fetch('https://api.ipify.org?format=json', { cache: 'no-store', signal: ctl.signal }).then(r => r.json()).then(j => j.ip).catch(() => null)]);
+    const h = here && here.boxes && here.boxes[name], w = watch && watch.boxes && watch.boxes[name];
+    if (!h && !w) { $('msg').textContent = 'No GHOST LINK called ' + name + '.'; $('sub').textContent = 'Check the spelling on the sticker.'; return; }
+    if (h && ip && crypto.subtle && /^[0-9.]{7,15}$/.test(h.lan || '') && Date.now() - (h.seen || 0) < 8 * 3600 * 1000) {
+      const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(ip), 'PBKDF2', false, ['deriveBits']);
+      const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new TextEncoder().encode('ghostlink-here-v1'), iterations: 100000 }, key, 128);
+      const net = [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('');
+      if (h.net === net) {
+        $('msg').textContent = 'On this Wi-Fi. Opening…';
+        $('sub').textContent = 'If nothing happens, tap OPEN.';
+        return go('http://' + h.lan + '/' + q, 'OPEN', true);
+      }
+    }
+    if (w && w.url && LIVE.test(w.url) && Date.now() - (w.since || 0) < 24 * 3600 * 1000) {
+      $('msg').textContent = 'Live now. Opening the view-only link…';
+      $('sub').textContent = 'You are not on the venue Wi-Fi, so this is WATCH FROM HOME (view only).';
+      return go(w.url.replace(/\/$/, '') + '/' + q, 'WATCH LIVE', true);
+    }
+    $('msg').textContent = name.toUpperCase() + " isn't on this Wi-Fi.";
+    $('sub').textContent = 'And watching from home is off right now.';
+    $('how').hidden = false;
+  } catch (e) {
+    $('msg').textContent = "Couldn't look it up."; $('how').hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
