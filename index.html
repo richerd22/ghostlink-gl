@@ -30,7 +30,7 @@
 <div id="looking"><p class="small">Looking for a GHOST LINK on this Wi-Fi…</p></div>
 <div id="notFound">
   <p class="big">Join the Wi-Fi <b>GHOST LINK</b>, then open this page again.</p>
-  <p>The password is on the sticker in the booth.</p>
+  <p>The password came with the box (on its sticker or card).</p>
   <p><a class="button" href="http://10.42.0.1/">OPEN THE DASHBOARD</a></p>
   <p class="small">On the venue's own Wi-Fi instead? Try <a href="http://ghostlink.local/">ghostlink.local</a>.</p>
 </div>
@@ -55,7 +55,23 @@
     $('foundList').innerHTML = mine.map(b => `<p><a class="button" href="http://${b.lan}/">OPEN${mine.length > 1 ? ' ' + esc(b.room).toUpperCase() : ' THE DASHBOARD'}</a></p>`).join('');
     $('foundText').textContent = mine.length > 1 ? 'GHOST LINK is on this Wi-Fi (' + mine.length + ' rooms).' : 'GHOST LINK is on this Wi-Fi.';
     $('found').hidden = false; $('notFound').hidden = true;
+    // One box on this Wi-Fi: just open it (Richard: "make it ezpz to get into"). A tap on STAY cancels.
+    try { localStorage.setItem('gl-last', JSON.stringify({ lan: mine[0].lan, at: Date.now() })); } catch (e) {}
+    if (mine.length === 1 && !/[?&]stay\b/.test(location.search)) {
+      const go = setTimeout(() => { location.href = 'http://' + mine[0].lan + '/'; }, 1500);
+      $('foundText').innerHTML = 'GHOST LINK is on this Wi-Fi. Opening it… <a href="?stay" id="stay">STAY HERE</a>';
+      $('stay').addEventListener('click', e => { e.preventDefault(); clearTimeout(go); $('foundText').textContent = 'GHOST LINK is on this Wi-Fi.'; });
+    }
   } catch (e) { /* offline or blocked: the normal instructions stay */ }
+  // Not found online (no internet here, or the box hasn't checked in): offer where it was last time on this phone.
+  try {
+    const last = JSON.parse(localStorage.getItem('gl-last') || 'null');
+    if (last && $('found').hidden && /^[0-9.]{7,15}$/.test(last.lan)) {
+      const p = document.createElement('p'); p.className = 'small';
+      p.innerHTML = 'Last time this phone found it at <a href="http://' + last.lan + '/">' + last.lan + '</a>. Same Wi-Fi as then? Tap that.';
+      $('notFound').appendChild(p);
+    }
+  } catch (e) {}
   done();
 })();
 </script>
