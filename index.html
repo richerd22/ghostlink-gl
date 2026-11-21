@@ -7,6 +7,15 @@
 <link rel="icon" href="icon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="stylesheet" href="site.css">
+<style>
+.ways { list-style: none; padding: 0; margin: 24px 0; counter-reset: w; }
+.ways > li { counter-increment: w; border: 1px solid var(--line); padding: 16px; margin-bottom: 12px; }
+.ways > li > b { display: block; letter-spacing: .08em; font-size: 14px; margin-bottom: 8px; }
+.ways > li > b::before { content: counter(w) "  "; }
+.ways p { margin: 0 0 10px; }
+.ways p:last-child { margin-bottom: 0; }
+.demo { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 4px; }
+</style>
 </head>
 <body>
 <main>
@@ -29,10 +38,25 @@
 </div>
 <div id="looking"><p class="small">Looking for a GHOST LINK on this Wi-Fi…</p></div>
 <div id="notFound">
-  <p class="big">Join the Wi-Fi <b>GHOST LINK</b>, then open this page again.</p>
-  <p>The password came with the box (on its sticker or card).</p>
-  <p><a class="button" href="http://10.42.0.1/">OPEN THE DASHBOARD</a></p>
-  <p class="small">On the venue's own Wi-Fi instead? Try <a href="http://ghostlink.local/">ghostlink.local</a>.</p>
+  <p class="big">No GHOST LINK on this Wi-Fi yet. Here's how to reach it.</p>
+  <ol class="ways">
+    <li><b>ON THE BOX'S OWN WI-FI</b>
+      <p>Join the Wi-Fi called <b>GHOST LINK</b>. The password came with the box, on its sticker or card. The dashboard usually pops up by itself. If not:</p>
+      <p><a class="button" href="http://10.42.0.1/">OPEN 10.42.0.1</a></p></li>
+    <li><b>ON THE VENUE'S WI-FI</b>
+      <p>If the box was set up on the venue's Wi-Fi, stay on it and open:</p>
+      <p><a class="button" href="http://ghostlink.local/">OPEN GHOSTLINK.LOCAL</a></p>
+      <p class="small">Some phones and guest Wi-Fi can't open .local names. <a href="https://ghostlink.cold.fyi/help/faq.html#ghostlink-local-won-t-open">What to do then</a>.</p>
+      <div id="lastSeen"></div></li>
+    <li><b>WITH THE HARD STOP APP</b>
+      <p>Running HARD STOP at the booth? The app looks for GHOST LINK by itself and tells you which Wi-Fi to join. <a href="https://ghostlink.cold.fyi/help/hard-stop.html">How they work together</a>.</p></li>
+  </ol>
+  <div class="demo">
+    <h2>NO BOX HERE?</h2>
+    <p>See the real dashboard running on made-up decks. Nothing to join, works on any phone.</p>
+    <p><a class="button" href="https://ghostlink.cold.fyi/live/">SEE IT LIVE</a></p>
+  </div>
+  <p class="small">Stuck? <a href="https://ghostlink.cold.fyi/help/">GHOST LINK help</a>.</p>
 </div>
 <script>
 (async () => {
@@ -69,7 +93,7 @@
     if (last && $('found').hidden && /^[0-9.]{7,15}$/.test(last.lan)) {
       const p = document.createElement('p'); p.className = 'small';
       p.innerHTML = 'Last time this phone found it at <a href="http://' + last.lan + '/">' + last.lan + '</a>. Same Wi-Fi as then? Tap that.';
-      $('notFound').appendChild(p);
+      $('lastSeen').appendChild(p);
     }
   } catch (e) {}
   done();
