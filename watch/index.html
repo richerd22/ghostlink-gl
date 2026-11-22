@@ -26,11 +26,12 @@
 
 <footer>made with &lt;3 in Boston by <a href="https://thirdpolararch.com">Third Polar Arch</a> · <a href="https://thirdpolararch.com/terms">Terms</a> · <a href="https://thirdpolararch.com/privacy">Privacy</a></footer>
 </main>
+<script src="../finder.js"></script>
 <script>
   // The box at the venue writes its current watch-from-home link to watch.json in this site's repo when it's
   // switched on, and clears it when it's off. Read it fresh from GitHub (the Pages copy can lag a minute).
+  // One unit only: gl.cold.fyi/<unit>/watch (404.html). This page is the picker for every live room (#111).
   const msg = document.getElementById('msg'), sub = document.getElementById('sub'), go = document.getElementById('go');
-  const LIVE = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com\/?$/;
   function off() {
     msg.textContent = "Not live right now.";
     sub.textContent = "The box at the venue turns this on from STATUS → WATCH FROM HOME. Check back once the night starts.";
@@ -38,10 +39,9 @@
   fetch('https://api.github.com/repos/richerd22/ghostlink-gl/contents/watch.json', { headers: { Accept: 'application/vnd.github.raw' }, cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(w => {
-      // One entry per GHOST LINK box (room). ?room=51 picks one when several are live.
-      const want = new URLSearchParams(location.search).get('room');
-      const live = Object.values(w.boxes || {}).filter(b => b.url && LIVE.test(b.url) && Date.now() - (b.since || 0) < 24 * 3600 * 1000)
-        .filter(b => !want || (b.room || '').toLowerCase() === want.toLowerCase());
+      // One entry per GHOST LINK box (room), labelled "UNIT 01 · MAIN ROOM". ?room=51 or ?unit=<name> picks one.
+      const q = new URLSearchParams(location.search);
+      const live = Finder.rooms(w, Date.now(), q.get('room'), q.get('unit'));
       if (!live.length) return off();
       document.getElementById('ghost').textContent = '  .--.\n / oo \\\n|      |\n|      |\n \\/\\/\\/';
       document.getElementById('ghost').className = 'ghost';
@@ -49,10 +49,10 @@
         msg.textContent = live.length + ' rooms live now.';
         sub.textContent = 'View only. Pick a room.';
         const list = document.getElementById('list');
-        live.forEach(b => { const a = document.createElement('a'); a.className = 'button'; a.href = b.url; a.textContent = 'WATCH ' + (b.room || 'LIVE').toUpperCase(); list.appendChild(a); });
+        live.forEach(b => { const a = document.createElement('a'); a.className = 'button'; a.href = b.url; a.textContent = 'WATCH ' + b.text; list.appendChild(a); });
         return;
       }
-      msg.textContent = (live[0].room ? live[0].room.toUpperCase() + ' is live' : 'Live now') + '. Opening...';
+      msg.textContent = live[0].text + ' is live. Opening...';
       sub.textContent = 'View only. If nothing happens, tap WATCH LIVE.';
       go.href = live[0].url;
       go.hidden = false;

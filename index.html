@@ -76,7 +76,7 @@
     const mine = boxes.filter(b => b.net === net && /^[0-9.]{7,15}$/.test(b.lan));
     if (!mine.length) return done();
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    $('foundList').innerHTML = mine.map(b => `<p><a class="button" href="http://${b.lan}/">OPEN${mine.length > 1 ? ' ' + esc(b.room).toUpperCase() : ' THE DASHBOARD'}</a></p>`).join('');
+    $('foundList').innerHTML = mine.map(b => `<p><a class="button" href="http://${b.lan}/">OPEN${mine.length > 1 ? ' ' + esc((b.label ? b.label + ' · ' : '') + b.room).toUpperCase() : ' THE DASHBOARD'}</a></p>`).join('');
     $('foundText').textContent = mine.length > 1 ? 'GHOST LINK is on this Wi-Fi (' + mine.length + ' rooms).' : 'GHOST LINK is on this Wi-Fi.';
     $('found').hidden = false; $('notFound').hidden = true;
     // One box on this Wi-Fi: just open it (Richard: "make it ezpz to get into"). A tap on STAY cancels.
