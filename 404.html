@@ -30,6 +30,8 @@
 <div id="how" hidden>
   <p>At the venue: join the Wi-Fi <b>GHOST LINK</b> (password on the sticker), then open this link again.</p>
   <p><a class="button" href="http://10.42.0.1/">OPEN THE DASHBOARD</a></p>
+  <p class="small">On the venue's Wi-Fi instead? Try <a href="http://ghostlink.local/">ghostlink.local</a>, or the address under STATUS -&gt; OPEN ON A PHONE on any screen that has the dashboard open.</p>
+  <p class="small" id="last" hidden></p>
 </div>
 <footer>made with &lt;3 in Boston by <a href="https://thirdpolararch.com">Third Polar Arch</a> · <a href="https://thirdpolararch.com/terms">Terms</a> · <a href="https://thirdpolararch.com/privacy">Privacy</a></footer>
 </main>
@@ -60,6 +62,7 @@
     const r = Finder.route({ path: location.pathname, search: location.search, here, watch, net, now: Date.now() });
     $('unit').textContent = r.title;
     if (r.kind === 'lan') {
+      try { const m = /^http:\/\/([0-9.]{7,15})\//.exec(r.url); if (m) localStorage.setItem('gl-last', JSON.stringify({ lan: m[1], at: Date.now() })); } catch (e) {}
       $('msg').textContent = 'On this Wi-Fi. Opening…';
       $('sub').textContent = 'If nothing happens, tap ' + OPEN[r.what] + '.';
       return go(r.url, OPEN[r.what], true);
@@ -82,9 +85,19 @@
     }
     $('msg').textContent = r.title + " isn't reachable right now.";
     $('sub').textContent = 'This link works again when ' + r.title + ' is live: on this Wi-Fi, or with WATCH FROM HOME on.';
-    $('how').hidden = false;
+    $('how').hidden = false; lastSeen();
   } catch (e) {
-    $('msg').textContent = "Couldn't look it up."; $('how').hidden = false;
+    $('msg').textContent = "Couldn't look it up."; $('how').hidden = false; lastSeen();
+  }
+  // #162: no internet here, or the box hasn't checked in: where this phone found it last time (index.html's same note).
+  function lastSeen() {
+    try {
+      const last = JSON.parse(localStorage.getItem('gl-last') || 'null');
+      if (!last || !/^[0-9.]{7,15}$/.test(last.lan)) return;
+      const a = document.createElement('a'); a.href = 'http://' + last.lan + '/'; a.textContent = last.lan;
+      $('last').append('Last time this phone found it at ', a, '. Same Wi-Fi as then? Tap that.');
+      $('last').hidden = false;
+    } catch (e) {}
   }
 })();
 </script>
